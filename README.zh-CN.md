@@ -26,6 +26,7 @@
 
 - `SKILL.md`：Codex skill 入口
 - `agents/openai.yaml`：可选的 agent 元数据
+- `CHANGELOG.md`：项目变更记录
 - `scripts/prepare_book.py`：拆包 EPUB 并生成翻译任务
 - `scripts/rebuild_book.py`：重建双语版和中文版 EPUB
 - `scripts/audit_workspace.py`：审计缺失项、重复项和疑似漏译段落
@@ -161,6 +162,33 @@ First run prepare_book.py, then translate tasks batch by batch, then audit, then
 - 致谢
 - 注释
 - 索引
+
+## 常见问题
+
+### 为什么审计通过后，仍然会看到一些 `Suspicious translated blocks`？
+
+因为审计分成两层：
+
+- 硬性结构检查：缺失 `id`、重复 `id`、缺失批次、不完整批次
+- 启发式检查：看某些段落是否仍然“英文味太重”
+
+如果硬性结构项都已经清零，那么工作区在结构上就是完整的。剩下的可疑项，很多其实只是网址、专有名词、目录标题、技术术语，或者保留英文更合适的内容。
+
+### 为什么不能只跑 `rebuild_book.py`？
+
+因为 `rebuild` 只能证明 EPUB 成功生成，不能证明每一条任务都真的被翻译了。正式交付前一定要跑 `audit_workspace.py`，最后再用 `rebuild_book.py --require-complete` 收口。
+
+### 为什么一个章节会落在多个 batch 里？
+
+因为这里的分批是按大小切的，不是按章节切的。长章节经常会跨多个 `batch_XXX.jsonl`。所以某章如果还有漏译，不能只看一个 batch，要把覆盖那一章的所有 batch 一起检查。
+
+### 为什么不建议直接从 Markdown 翻？
+
+通常不建议。这个流程是围绕 EPUB 原始 XHTML 设计的，更容易保留目录、链接、脚注锚点和格式结构。
+
+### 能不能改成别的语言对？
+
+可以，但当前的提示词、说明和审计习惯都是围绕“英文 -> 简体中文”调过的。如果改成别的语言对，最好同步改提示词和人工复核规则。
 
 ## 说明
 

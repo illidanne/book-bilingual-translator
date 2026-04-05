@@ -50,6 +50,7 @@ Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edi
 
 - `SKILL.md`: Codex skill entrypoint
 - `agents/openai.yaml`: optional agent metadata
+- `CHANGELOG.md`: project change history
 - `scripts/prepare_book.py`: unpack EPUB and generate translation tasks
 - `scripts/rebuild_book.py`: rebuild bilingual and Chinese-only EPUB files
 - `scripts/audit_workspace.py`: audit completeness and suspicious English leftovers
@@ -167,6 +168,33 @@ Also spot-check:
 - acknowledgments
 - notes
 - index
+
+## FAQ
+
+### Why are some blocks still flagged as suspicious after a successful audit?
+
+The audit has two layers:
+
+- hard structural checks such as missing ids, duplicate ids, or incomplete batches
+- soft heuristic checks for English-heavy text
+
+If the hard checks are all zero, the workspace is structurally complete. The remaining suspicious blocks are often URLs, names, product titles, technical terms, or table-of-contents entries.
+
+### Why is `rebuild_book.py` not enough by itself?
+
+Because rebuild only proves that EPUB generation succeeded. It does not prove that every task record was translated. Always run `audit_workspace.py` and then finish with `rebuild_book.py --require-complete`.
+
+### Why does one chapter sometimes appear across multiple batch files?
+
+Batching is size-based, not chapter-based. A long chapter can be split across multiple `batch_XXX.jsonl` files. If one section still looks untranslated, inspect every batch that overlaps that chapter.
+
+### Should I translate from Markdown instead of EPUB XHTML?
+
+Usually no. This workflow is designed to preserve EPUB structure, navigation, links, and formatting more reliably by working from the original EPUB XHTML.
+
+### Can I use this with another language pair?
+
+Yes, but the current prompts and documentation are tuned for English to Simplified Chinese. If you adapt it to another language pair, update the prompt text and review rules accordingly.
 
 ## Notes
 
