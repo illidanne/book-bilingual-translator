@@ -1,0 +1,5 @@
+interface:
+  display_name: "Book Bilingual Translator"
+  short_description: "Translate EPUB books into bilingual and Chinese editions"
+  default_prompt: "Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edition and a Chinese-English bilingual edition."
+
