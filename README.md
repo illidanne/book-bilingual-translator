@@ -7,6 +7,28 @@ Translate an English EPUB into:
 
 This project uses Codex for translation and local Python scripts for deterministic EPUB extraction, auditing, and rebuild.
 
+## Install As A Codex Skill
+
+Clone or copy this repository, then place the skill directory under your Codex skills folder:
+
+```bash
+mkdir -p "$CODEX_HOME/skills"
+cp -R /path/to/book-bilingual-translator "$CODEX_HOME/skills/book-bilingual-translator"
+```
+
+If your Codex environment uses `~/.codex/skills`, the equivalent is:
+
+```bash
+mkdir -p ~/.codex/skills
+cp -R /path/to/book-bilingual-translator ~/.codex/skills/book-bilingual-translator
+```
+
+After that, you can invoke it in Codex with a prompt like:
+
+```text
+Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edition and a Chinese-English bilingual edition.
+```
+
 ## 中文简介
 
 这个仓库提供一套面向 Codex 的 EPUB 翻译工作流，目标是把英文电子书转换成：
@@ -118,6 +140,12 @@ Suggested prompt:
 Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edition and a Chinese-English bilingual edition.
 First run prepare_book.py, then translate tasks batch by batch, then audit, then rebuild with --require-complete.
 ```
+
+## Install Notes
+
+- Keep the directory name as `book-bilingual-translator` so the skill name matches `SKILL.md`.
+- If you update the repository later, replace the installed folder or pull the new commits into your local clone.
+- The scripts do not require network access, but Codex itself is responsible for the translation pass.
 
 ## Release Rules
 
