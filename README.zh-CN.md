@@ -24,6 +24,7 @@
 
 ## 仓库结构
 
+- `.agents/workflows/translate-epub.md`：面向 Antigravity 的工作流定义
 - `SKILL.md`：Codex skill 入口
 - `agents/openai.yaml`：可选的 agent 元数据
 - `CHANGELOG.md`：项目变更记录
@@ -86,11 +87,15 @@ python3 scripts/prepare_book.py \
 - `output/`：重建后的 EPUB 输出目录
 - `manifest.json`：工作区清单
 
-### 2. 用 Codex 逐批翻译
+### 2. 通过基座内置模型增量逐批翻译
 
-对每个 `tasks/batch_XXX.jsonl`，在 `translated/` 下写入同名文件。
+为了减少依赖并避免管理 API key，翻译阶段可以完全借助内置基座大模型（如 Antigravity 或 Codex）执行，不依赖外部翻译 API。
 
-每行格式必须是：
+对每个 `tasks/batch_XXX.jsonl`，在 `translated/` 下写入同名文件。考虑到厚书的上下文负担，建议在对话指令中依靠断点续传：
+1. 告诉代理自行读取 `tasks/` 目录下欠缺的批次文件；
+2. 逐批输出成译文内容，每次对话完成几个批次的落盘写回。
+
+要求落盘每行格式必须是：
 
 ```json
 {"id":"...", "translated_html":"..."}
@@ -98,10 +103,12 @@ python3 scripts/prepare_book.py \
 
 注意：
 
-- 必须保留 `id`
+- 本流程可以依靠代理自带的工作流增量读写完成，发现断点只需让它重拾遗漏的批次继续跑。
+- 不需要外部翻译 API，但本地 `prepare/audit/rebuild` 脚本仍然是正式流程的一部分。
+- 必须严格保留 `id`
 - 必须保留内联 HTML、链接、斜体、脚注锚点
-- 一条输入对应一条输出
-- 不要加解释、注释或额外说明
+- 结构化逐条对应：一条输入必定对应一条输出
+- 绝对不要加额外的 markdown block 或者文本解释、预设说明
 
 ### 3. 重建 EPUB
 
@@ -141,6 +148,24 @@ python3 scripts/rebuild_book.py \
 Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edition and a Chinese-English bilingual edition.
 First run prepare_book.py, then translate tasks batch by batch, then audit, then rebuild with --require-complete.
 ```
+
+## Antigravity 工作流支持
+
+仓库中还包含一个面向 Antigravity 的工作流文件：`.agents/workflows/translate-epub.md`。
+
+这个工作流只适用于真正支持以下能力的环境：
+
+- 自动识别 `.agents/workflows/`
+- 代理原生读写文件
+- 通过工作流步骤执行命令
+
+它的作用是帮助编排流程，不是替代本地脚本。下面这些脚本仍然是正式流程的基础：
+
+- `prepare_book.py`
+- `audit_workspace.py`
+- `rebuild_book.py`
+
+如果你的环境并不识别 `.agents/workflows/`，那就回退到上面那套标准的手动 batch 流程。
 
 ## 交付前必须确认
 
@@ -189,6 +214,10 @@ First run prepare_book.py, then translate tasks batch by batch, then audit, then
 ### 能不能改成别的语言对？
 
 可以，但当前的提示词、说明和审计习惯都是围绕“英文 -> 简体中文”调过的。如果改成别的语言对，最好同步改提示词和人工复核规则。
+
+### Antigravity 工作流是否保证一次就跑完整本书？
+
+不能这样假设。对长书来说，推荐方式仍然是按 batch 增量执行，并在中间穿插审计和断点续跑。工作流能帮助编排步骤，但不应被当成“单次运行必然完整完成整本书”的保证。
 
 ## 说明
 

@@ -48,6 +48,7 @@ Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edi
 
 ## Repository Layout
 
+- `.agents/workflows/translate-epub.md`: Antigravity-oriented workflow definition
 - `SKILL.md`: Codex skill entrypoint
 - `agents/openai.yaml`: optional agent metadata
 - `CHANGELOG.md`: project change history
@@ -88,9 +89,15 @@ This creates:
 - `output/`: rebuilt EPUB outputs
 - `manifest.json`: workspace manifest
 
-### 2. Translate each batch with Codex
+### 2. Native Built-in Batch Translation
 
-For every `tasks/batch_XXX.jsonl`, write a matching file to `translated/`:
+To avoid managing API keys, the translation phase can be executed via the built-in LLM agent in environments such as Antigravity or Codex. This mode does not use any external translation API.
+
+For every `tasks/batch_XXX.jsonl`, write a matching file to `translated/`. Because of context limits for large books, this is done incrementally:
+1. Command the agent to check for untranslated batches by comparing `tasks/` with `translated/`.
+2. Translate one or a few batch files per turn, saving them directly inside `translated/` via agent native file writing capabilities. You can resume at any point.
+
+The written output MUST perfectly match this JSON line format:
 
 ```json
 {"id":"...", "translated_html":"..."}
@@ -98,10 +105,12 @@ For every `tasks/batch_XXX.jsonl`, write a matching file to `translated/`:
 
 Rules:
 
+- No third-party translation API is required in this mode.
+- Local Python scripts are still used for prepare, audit, and rebuild.
 - preserve `id`
 - keep inline HTML, links, italics, and note anchors
 - output one JSON object per input record
-- do not add explanations or notes
+- do not add explanations, markdown blockers or notes
 
 ### 3. Rebuild EPUB outputs
 
@@ -141,6 +150,24 @@ Suggested prompt:
 Use $book-bilingual-translator to turn this English EPUB into a Chinese-only edition and a Chinese-English bilingual edition.
 First run prepare_book.py, then translate tasks batch by batch, then audit, then rebuild with --require-complete.
 ```
+
+## Antigravity Workflow Support
+
+This repository also includes an Antigravity-oriented workflow file at `.agents/workflows/translate-epub.md`.
+
+Use that workflow only in environments that actually support:
+
+- discovering `.agents/workflows/`
+- agent-native file reading and writing
+- command execution from workflow steps
+
+This workflow is an orchestration layer, not a replacement for the local scripts. The local scripts remain the source of truth for:
+
+- `prepare_book.py`
+- `audit_workspace.py`
+- `rebuild_book.py`
+
+If your environment does not recognize `.agents/workflows/`, fall back to the standard manual batch loop described above.
 
 ## Install Notes
 
@@ -195,6 +222,10 @@ Usually no. This workflow is designed to preserve EPUB structure, navigation, li
 ### Can I use this with another language pair?
 
 Yes, but the current prompts and documentation are tuned for English to Simplified Chinese. If you adapt it to another language pair, update the prompt text and review rules accordingly.
+
+### Does the Antigravity workflow guarantee one-shot translation of a whole book?
+
+No. For long books, the intended usage is still incremental batch execution with resume and audit checkpoints. The workflow helps orchestrate the loop, but it should not be treated as a guarantee that one run will finish an entire large book without supervision.
 
 ## Notes
 
